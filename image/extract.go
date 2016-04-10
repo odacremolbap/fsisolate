@@ -13,7 +13,7 @@ import (
 // TODO not all tar formats supported
 // TODO if extraction fails halfway, defer to delete remaining files
 func extractImage(image string, root string) error {
-	log.Debugf("decompressing %s \nto %s", image, root)
+	log.Debugf("decompressing image %s \ninto %s", image, root)
 
 	imgRead, err := os.Open(image)
 	if err != nil {
