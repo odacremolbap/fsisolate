@@ -14,14 +14,12 @@ func PrepareChrootedProcess(imagePath string, root string, exec string, args []s
 		command:   %s
 		arguments: %s`, imagePath, root, exec, args)
 
-	// get image into root
-
-	err := image.PrepareImage(imagePath, root)
+	// get image into root, and return the new root directory
+	root, err := image.PrepareImage(imagePath, root)
 	if err != nil {
 		return nil, err
 	}
 
-	// TODO return chrootedprocess structure
-
-	return nil, nil
+	// create the chroot process structure
+	return runtime.NewChrootProcess(root), nil
 }
