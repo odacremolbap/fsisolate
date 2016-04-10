@@ -7,12 +7,10 @@ import (
 )
 
 // PrepareChrootedProcess prepares the filesystem structure to start a chrooted execution
-func PrepareChrootedProcess(imagePath string, root string, exec string, args []string) (*runtime.ChrootedProcess, error) {
+func PrepareChrootedProcess(imagePath string, root string) (*runtime.ChrootedProcess, error) {
 	log.Debugf(`preparing new chroot isolated environment
 		image:     %s
-		fs root:   %s
-		command:   %s
-		arguments: %s`, imagePath, root, exec, args)
+		fs root:   %s`, imagePath, root)
 
 	// get image into root, and return the new root directory
 	root, err := image.PrepareImage(imagePath, root)
