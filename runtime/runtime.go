@@ -2,12 +2,26 @@ package runtime
 
 import "os"
 
-// ChrootedProcess TODO
+// ChrootedProcess represents a process to be executed into a chroot sandbox
 type ChrootedProcess struct {
+	outStream *os.File
+	errStream *os.File
+	root      string
 }
 
-// ExecNewRoot executes command in chroot sandbox
-func ExecNewRoot(root string, command ...string) {
+// NewChrootProcess returns a chroot process structure
+func NewChrootProcess(root string) *ChrootedProcess {
+
+	return &ChrootedProcess{
+		outStream: os.Stdout,
+		errStream: os.Stderr,
+		root:      root,
+	}
+
+}
+
+// SandboxExec executes command in chroot sandbox
+func (p *ChrootedProcess) SandboxExec(command string, args ...string) {
 
 }
 
