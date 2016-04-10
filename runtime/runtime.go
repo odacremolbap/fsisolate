@@ -70,7 +70,7 @@ func (p *ChrootedProcess) Wait() error {
 	// wait for the process to exit
 	err := p.cmd.Wait()
 	if err != nil {
-		return fmt.Errorf("Error wai// prepare processting for process: %s", err.Error())
+		return fmt.Errorf("Error waiting process: %s", err.Error())
 	}
 	return nil
 }
