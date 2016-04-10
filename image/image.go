@@ -89,6 +89,6 @@ func getImagePathType(image string) (PathType, error) {
 		return DirectoryImage, nil
 	}
 
-	// TODO check for other types and don¡nt assume not being a URL or Dir, it's a file
+	// TODO check for other types and don'nt assume not being a URL or Dir, it's a file
 	return FileImage, nil
 }
