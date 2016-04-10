@@ -13,7 +13,6 @@ import (
 // ChrootedProcess represents a process to be executed into a chroot sandbox
 type ChrootedProcess struct {
 	outStream *os.File
-	errStream *os.File
 	root      string
 	cmd       *exec.Cmd
 }
@@ -23,7 +22,6 @@ func NewChrootProcess(root string) *ChrootedProcess {
 
 	return &ChrootedProcess{
 		outStream: os.Stdout,
-		errStream: os.Stderr,
 		root:      root,
 	}
 
@@ -63,11 +61,16 @@ func (p *ChrootedProcess) SandboxExec(command string, args ...string) error {
 	if err != nil {
 		return fmt.Errorf("Error starting process: %s", err.Error())
 	}
+	return nil
+}
+
+// Wait waits for the execution to end
+func (p *ChrootedProcess) Wait() error {
 
 	// wait for the process to exit
-	err = p.cmd.Wait()
+	err := p.cmd.Wait()
 	if err != nil {
-		return fmt.Errorf("Error waiting for process: %s", err.Error())
+		return fmt.Errorf("Error wai// prepare processting for process: %s", err.Error())
 	}
 
 	// get wait status
@@ -85,4 +88,9 @@ func (p *ChrootedProcess) SendSignal(signal os.Signal) error {
 // GetStatus TODO
 func (p *ChrootedProcess) GetStatus() (string, error) {
 	return "", nil
+}
+
+// SetOutput sets output stream for sandboxed process
+func (p *ChrootedProcess) SetOutput(out *os.File) {
+	p.outStream = out
 }
