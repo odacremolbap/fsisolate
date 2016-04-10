@@ -14,7 +14,8 @@ type PathType uint8
 
 // Path types supported
 const (
-	URLImage PathType = iota
+	Unknown PathType = iota
+	URLImage
 	DirectoryImage
 	FileImage
 )
@@ -26,11 +27,11 @@ const (
 // TODO for URL, check that root and image directories doesn't exists
 // TODO for tarballs, check that root directory doesn't exists
 // TODO if the image parameter is a directory, there's no need to call PrepareImage. Anyway, we are supporting DirectoryImage
-func PrepareImage(image string, root string) error {
+func PrepareImage(image string, root string) (string, error) {
 	log.Debugf("preparing image %s \ninto %s", image, root)
 	ipt, err := getImagePathType(image)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	// if it's an URL, download the file to a local folder
@@ -42,31 +43,30 @@ func PrepareImage(image string, root string) error {
 		// this is OK as long as we don't have to use again the URL
 		image, err = downloadImage(image, imageDir)
 		if err != nil {
-			return err
+			return "", err
 		}
 	}
 
 	// if it's a file (downloaded or not), decompress to new root
 	if ipt == URLImage || ipt == FileImage {
 
-		rootDir := filepath.Join(root, "root")
-		os.Mkdir(rootDir, 0777)
+		// append 'root' to the root dir argument
+		root = filepath.Join(root, "root")
+		os.Mkdir(root, 0777)
 
-		err := extractImage(image, rootDir)
+		err := extractImage(image, root)
 		if err != nil {
-			return err
+			return "", err
 		}
+		return root, nil
 	}
 
-	if ipt == DirectoryImage {
-		// if it's a directory, we expect that image == root or root is ""
-		if root != "" && root != image {
-			// TODO we could copy image contents to root. For now let's return an error
-			return fmt.Errorf("If image is a directory, new root must be that same directory of empty.")
-		}
+	// if it's a directory, we expect that image == root or root is ""
+	if root != "" && root != image {
+		// TODO we could copy image contents to root. For now let's return an error
+		return "", fmt.Errorf("If image is a directory, new root must be that same directory of empty.")
 	}
-
-	return nil
+	return root, nil
 }
 
 // getImagePathType check image type based on the image path string
@@ -81,7 +81,7 @@ func getImagePathType(image string) (PathType, error) {
 	// check file or directory
 	r, err := os.Stat(image)
 	if err != nil {
-		return 0, fmt.Errorf("Error checking image type: %s", err.Error())
+		return Unknown, fmt.Errorf("Error checking image type: %s", err.Error())
 	}
 
 	// check directory
