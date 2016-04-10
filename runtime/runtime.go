@@ -72,22 +72,51 @@ func (p *ChrootedProcess) Wait() error {
 	if err != nil {
 		return fmt.Errorf("Error wai// prepare processting for process: %s", err.Error())
 	}
-
-	// get wait status
-	waitStatus := p.cmd.ProcessState.Sys().(syscall.WaitStatus)
-	log.Debugf("exited with code %d", waitStatus.ExitStatus())
-
 	return nil
 }
 
 // SendSignal sends TODO
 func (p *ChrootedProcess) SendSignal(signal os.Signal) error {
+	if p.cmd == nil || p.cmd.Process == nil {
+		return fmt.Errorf("Process does not exists")
+	}
+
+	err := p.cmd.Process.Signal(signal)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
-// GetStatus TODO
-func (p *ChrootedProcess) GetStatus() (string, error) {
-	return "", nil
+// GetPID returns PID from the process (even if it's not running)
+func (p *ChrootedProcess) GetPID() (int, error) {
+	if p.cmd == nil || p.cmd.Process == nil {
+		return 0, fmt.Errorf("Process does not exists")
+	}
+
+	return p.cmd.Process.Pid, nil
+}
+
+// GetExited returns boolean indicating if process has finished
+func (p *ChrootedProcess) GetExited() (bool, error) {
+	if _, err := p.GetPID(); err != nil {
+		return true, err
+	}
+
+	if p.cmd.ProcessState != nil && p.cmd.ProcessState.Exited() {
+		return true, nil
+	}
+	return false, nil
+}
+
+// GetExitStatus returns process exit status
+func (p *ChrootedProcess) GetExitStatus() (int, error) {
+	if p.cmd == nil || p.cmd.ProcessState == nil || !p.cmd.ProcessState.Exited() {
+		return 0, fmt.Errorf("Process does not exists, %t", p.cmd.ProcessState.Exited())
+	}
+
+	return p.cmd.ProcessState.Sys().(syscall.WaitStatus).ExitStatus(), nil
 }
 
 // SetOutput sets output stream for sandboxed process
