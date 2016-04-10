@@ -5,6 +5,8 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+
+	log "github.com/sirupsen/logrus"
 )
 
 // PathType path format type
@@ -17,11 +19,15 @@ const (
 	FileImage
 )
 
-// PrepareImage load the image in the root path
-// TODO check that root and image directories doesn't exists
-// TODO if the image parameter is a directory, there's no need to call PrepareImage, anyway, we are supporting DirectoryImage
+// PrepareImage prepares the directory to isolate
+// If image is a URL it gets downloaded to root/image and extracted to root/root
+// If image is a tarball file it gets extracted to root/root
+// If image is a directory (and root is empty) that directory will be the new root
+// TODO for URL, check that root and image directories doesn't exists
+// TODO for tarballs, check that root directory doesn't exists
+// TODO if the image parameter is a directory, there's no need to call PrepareImage. Anyway, we are supporting DirectoryImage
 func PrepareImage(image string, root string) error {
-
+	log.Debugf("preparing image %s \ninto %s", image, root)
 	ipt, err := getImagePathType(image)
 	if err != nil {
 		return err
@@ -75,7 +81,7 @@ func getImagePathType(image string) (PathType, error) {
 	// check file or directory
 	r, err := os.Stat(image)
 	if err != nil {
-		return 0, fmt.Errorf("Unknown image type. %s", err.Error())
+		return 0, fmt.Errorf("Error checking image type: %s", err.Error())
 	}
 
 	// check directory

@@ -10,7 +10,7 @@ import (
 )
 
 // extractImage retrieves a image from internet
-// TODO not all tar formats supported
+// TODO not all tar formats supported (zipped, ...)
 // TODO if extraction fails halfway, defer to delete remaining files
 func extractImage(image string, root string) error {
 	log.Debugf("decompressing image %s \ninto %s", image, root)
