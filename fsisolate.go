@@ -3,14 +3,10 @@ package fsisolate
 import (
 	"github.com/odacremolbap/fsisolate/image"
 	"github.com/odacremolbap/fsisolate/runtime"
-	log "github.com/sirupsen/logrus"
 )
 
-// PrepareChrootedProcess prepares the filesystem structure to start a chrooted execution
-func PrepareChrootedProcess(imagePath string, root string) (*runtime.ChrootedProcess, error) {
-	log.Debugf(`preparing new chroot isolated environment
-		image:     %s
-		fs root:   %s`, imagePath, root)
+// Prepare prepares the filesystem structure to start a chrooted execution
+func Prepare(imagePath string, root string) (*runtime.ChrootedProcess, error) {
 
 	// get image into root, and return the new root directory
 	root, err := image.PrepareImage(imagePath, root)

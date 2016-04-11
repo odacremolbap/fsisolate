@@ -5,13 +5,26 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"sync"
 	"syscall"
+)
 
-	log "github.com/sirupsen/logrus"
+// ProcessState is the state in which a process can be
+type ProcessState string
+
+// Possible process states
+const (
+	NotStarted ProcessState = "not started"
+	Running    ProcessState = "running"
+	Finished   ProcessState = "finished"
 )
 
 // ChrootedProcess represents a process to be executed into a chroot sandbox
+// outputStream is accessed using a method
+// root shouldn't change, it can only be set on creation
+// cmd is set when the process is started.
 type ChrootedProcess struct {
+	sync.Mutex
 	outStream *os.File
 	root      string
 	cmd       *exec.Cmd
@@ -19,22 +32,30 @@ type ChrootedProcess struct {
 
 // NewChrootProcess returns a chroot process structure
 func NewChrootProcess(root string) *ChrootedProcess {
-
 	return &ChrootedProcess{
 		outStream: os.Stdout,
 		root:      root,
 	}
-
 }
 
-// SandboxExec executes command in chroot sandbox
-func (p *ChrootedProcess) SandboxExec(command string, args ...string) error {
-	log.Debugf("Executing '%s %v' in sandbox %s", command, args, p.root)
+// SetOutput sets output stream for sandboxed process
+func (p *ChrootedProcess) SetOutput(out *os.File) {
+	p.Lock()
+	p.outStream = out
+	p.Unlock()
+}
 
-	// TODO validation
-	// make sure there is no other cmd being executed
+// Exec executes command in chroot sandbox
+func (p *ChrootedProcess) Exec(command string, args ...string) error {
+	p.Lock()
+	defer p.Unlock()
 
-	// add root dir as first arg to chroot, command as second
+	if p.getState() == Running {
+		return fmt.Errorf("Error starting process: there is another process executing in this chroot")
+	}
+
+	// Execution command is chroot, so we need to use command as first argument
+	// and actual command arguments behind
 	chargs := []string{p.root, command}
 	for _, arg := range args {
 		chargs = append(chargs, arg)
@@ -42,17 +63,18 @@ func (p *ChrootedProcess) SandboxExec(command string, args ...string) error {
 
 	p.cmd = exec.Command("chroot", chargs...)
 
-	// get stdout from chrooted proc
+	// get stdout from chrooted process
 	reader, err := p.cmd.StdoutPipe()
 	if err != nil {
-		return fmt.Errorf("Error connecting process pipe: %s", err.Error())
+		return fmt.Errorf("Error getting chrooted process stdout: %s", err.Error())
 	}
 
-	// scan stream and send to output
+	// send chrooted process output to our output stream
 	procscan := bufio.NewScanner(reader)
 	go func() {
 		for procscan.Scan() {
-			fmt.Fprintf(p.outStream, "%s\n", procscan.Text())
+			// TODO parametrize this prefix
+			fmt.Fprintf(p.outStream, "[CHROOT]%s\n", procscan.Text())
 		}
 	}()
 
@@ -66,8 +88,16 @@ func (p *ChrootedProcess) SandboxExec(command string, args ...string) error {
 
 // Wait waits for the execution to end
 func (p *ChrootedProcess) Wait() error {
+	// lock only process status check
+	// the important matter is that p.cmd is not nil to avoid panic
+	{
+		p.Lock()
+		defer p.Unlock()
+		if p.getState() != Running {
+			return fmt.Errorf("Error waiting process: process has not started")
+		}
+	}
 
-	// wait for the process to exit
 	err := p.cmd.Wait()
 	if err != nil {
 		return fmt.Errorf("Error waiting process: %s", err.Error())
@@ -75,10 +105,14 @@ func (p *ChrootedProcess) Wait() error {
 	return nil
 }
 
-// SendSignal sends TODO
+// SendSignal sends signal to the chrooted process
 func (p *ChrootedProcess) SendSignal(signal os.Signal) error {
-	if p.cmd == nil || p.cmd.Process == nil {
-		return fmt.Errorf("Process does not exists")
+	p.Lock()
+	defer p.Unlock()
+
+	// the important matter is that p.cmd.Process is not nil to avoid panic
+	if p.getState() != Running {
+		return fmt.Errorf("Error sending signal process: process has not started")
 	}
 
 	err := p.cmd.Process.Signal(signal)
@@ -89,37 +123,47 @@ func (p *ChrootedProcess) SendSignal(signal os.Signal) error {
 	return nil
 }
 
-// GetPID returns PID from the process (even if it's not running)
+// GetPID returns PID from the process (started or finished)
 func (p *ChrootedProcess) GetPID() (int, error) {
-	if p.cmd == nil || p.cmd.Process == nil {
-		return 0, fmt.Errorf("Process does not exists")
+	p.Lock()
+	defer p.Unlock()
+
+	if p.getState() == NotStarted {
+		return 0, fmt.Errorf("Error getting PID: process has not started")
 	}
 
 	return p.cmd.Process.Pid, nil
 }
 
-// GetExited returns boolean indicating if process has finished
-func (p *ChrootedProcess) GetExited() (bool, error) {
-	if _, err := p.GetPID(); err != nil {
-		return true, err
-	}
-
-	if p.cmd.ProcessState != nil && p.cmd.ProcessState.Exited() {
-		return true, nil
-	}
-	return false, nil
-}
-
-// GetExitStatus returns process exit status
+// GetExitStatus returns exit status once the process has finished
 func (p *ChrootedProcess) GetExitStatus() (int, error) {
-	if p.cmd == nil || p.cmd.ProcessState == nil || !p.cmd.ProcessState.Exited() {
-		return 0, fmt.Errorf("Process does not exists, %t", p.cmd.ProcessState.Exited())
+	p.Lock()
+	defer p.Unlock()
+
+	if p.getState() != Finished {
+		return 0, fmt.Errorf("Error getting exit status: process is not finished")
 	}
 
 	return p.cmd.ProcessState.Sys().(syscall.WaitStatus).ExitStatus(), nil
 }
 
-// SetOutput sets output stream for sandboxed process
-func (p *ChrootedProcess) SetOutput(out *os.File) {
-	p.outStream = out
+// GetState returns the process state
+func (p *ChrootedProcess) GetState() ProcessState {
+	p.Lock()
+	defer p.Unlock()
+	return p.getState()
+}
+
+// getState internal method that doesn't lock
+func (p *ChrootedProcess) getState() ProcessState {
+	// process not started
+	if p.cmd == nil || p.cmd.Process == nil {
+		return NotStarted
+	}
+	// process running
+	if p.cmd.ProcessState == nil || p.cmd.ProcessState.Exited() == false {
+		return Running
+	}
+	// process finished
+	return Finished
 }
