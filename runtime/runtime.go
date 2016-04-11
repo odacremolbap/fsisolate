@@ -40,9 +40,7 @@ func NewChrootProcess(root string) *ChrootedProcess {
 
 // SetOutput sets output stream for sandboxed process
 func (p *ChrootedProcess) SetOutput(out *os.File) {
-	p.Lock()
 	p.outStream = out
-	p.Unlock()
 }
 
 // Exec executes command in chroot sandbox
@@ -88,14 +86,8 @@ func (p *ChrootedProcess) Exec(command string, args ...string) error {
 
 // Wait waits for the execution to end
 func (p *ChrootedProcess) Wait() error {
-	// lock only process status check
-	// the important matter is that p.cmd is not nil to avoid panic
-	{
-		p.Lock()
-		defer p.Unlock()
-		if p.getState() != Running {
-			return fmt.Errorf("Error waiting process: process has not started")
-		}
+	if p.getState() != Running {
+		return fmt.Errorf("Error waiting process: process has not started")
 	}
 
 	err := p.cmd.Wait()
@@ -107,8 +99,6 @@ func (p *ChrootedProcess) Wait() error {
 
 // SendSignal sends signal to the chrooted process
 func (p *ChrootedProcess) SendSignal(signal os.Signal) error {
-	p.Lock()
-	defer p.Unlock()
 
 	// the important matter is that p.cmd.Process is not nil to avoid panic
 	if p.getState() != Running {
@@ -125,8 +115,6 @@ func (p *ChrootedProcess) SendSignal(signal os.Signal) error {
 
 // GetPID returns PID from the process (started or finished)
 func (p *ChrootedProcess) GetPID() (int, error) {
-	p.Lock()
-	defer p.Unlock()
 
 	if p.getState() == NotStarted {
 		return 0, fmt.Errorf("Error getting PID: process has not started")
@@ -137,8 +125,6 @@ func (p *ChrootedProcess) GetPID() (int, error) {
 
 // GetExitStatus returns exit status once the process has finished
 func (p *ChrootedProcess) GetExitStatus() (int, error) {
-	p.Lock()
-	defer p.Unlock()
 
 	if p.getState() != Finished {
 		return 0, fmt.Errorf("Error getting exit status: process is not finished")
@@ -149,8 +135,6 @@ func (p *ChrootedProcess) GetExitStatus() (int, error) {
 
 // GetState returns the process state
 func (p *ChrootedProcess) GetState() ProcessState {
-	p.Lock()
-	defer p.Unlock()
 	return p.getState()
 }
 
