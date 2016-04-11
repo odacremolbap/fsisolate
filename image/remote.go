@@ -8,14 +8,11 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-
-	log "github.com/sirupsen/logrus"
 )
 
 // downloadImage retrieves a image from internet
 // TODO support 302 redirections
 func downloadImage(image string, root string) (string, error) {
-	log.Debugf("downloading  image %s", image)
 
 	imageURL, err := url.Parse(image)
 	if err != nil {
@@ -48,12 +45,9 @@ func downloadImage(image string, root string) (string, error) {
 	}
 	defer file.Close()
 
-	read, err := io.Copy(file, resp.Body)
-	if err != nil {
+	if _, err = io.Copy(file, resp.Body); err != nil {
 		return "", err
 	}
-
-	log.Printf("read %d bytes to %s", read, fileName)
 
 	return fileName, nil
 }

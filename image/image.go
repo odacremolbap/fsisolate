@@ -5,8 +5,6 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-
-	log "github.com/sirupsen/logrus"
 )
 
 // PathType path format type
@@ -20,15 +18,14 @@ const (
 	FileImage
 )
 
-// PrepareImage prepares the directory to isolate
+// PrepareImage prepares the directory to isolate with chroot
 // If image is a URL it gets downloaded to root/image and extracted to root/root
 // If image is a tarball file it gets extracted to root/root
 // If image is a directory (and root is empty) that directory will be the new root
 // TODO for URL, check that root and image directories doesn't exists
 // TODO for tarballs, check that root directory doesn't exists
-// TODO if the image parameter is a directory, there's no need to call PrepareImage. Anyway, we are supporting DirectoryImage
 func PrepareImage(image string, root string) (string, error) {
-	log.Debugf("preparing image %s \ninto %s", image, root)
+
 	ipt, err := getImagePathType(image)
 	if err != nil {
 		return "", err
@@ -61,12 +58,8 @@ func PrepareImage(image string, root string) (string, error) {
 		return root, nil
 	}
 
-	// if it's a directory, we expect that image == root or root is ""
-	if root != "" && root != image {
-		// TODO we could copy image contents to root. For now let's return an error
-		return "", fmt.Errorf("If image is a directory, new root must be that same directory of empty.")
-	}
-	return root, nil
+	// if it's a directory discard root value and use the image's directory
+	return image, nil
 }
 
 // getImagePathType check image type based on the image path string

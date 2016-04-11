@@ -5,15 +5,12 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-
-	log "github.com/sirupsen/logrus"
 )
 
-// extractImage retrieves a image from internet
+// extractImage extracts a image to the root folder
 // TODO not all tar formats supported (zipped, ...)
 // TODO if extraction fails halfway, defer to delete remaining files
 func extractImage(image string, root string) error {
-	log.Debugf("decompressing image %s \ninto %s", image, root)
 
 	imgRead, err := os.Open(image)
 	if err != nil {
@@ -22,7 +19,6 @@ func extractImage(image string, root string) error {
 	defer imgRead.Close()
 
 	tr := tar.NewReader(imgRead)
-
 	for {
 		header, err := tr.Next()
 		if err == io.EOF {
