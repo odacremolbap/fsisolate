@@ -5,9 +5,9 @@ Worst name ever for a library that encapsulates chroot.
 
 # Tests
 - [ ] Write tests!
-- [ ] URL Linux
-- [ ] Dir Linux
-- [ ] File Linux
+- [x] URL Linux
+- [x] Dir Linux
+- [x] File Linux
 - [x] URL Darwin
 - [x] Dir Darwin
 - [x] File Darwin
