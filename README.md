@@ -8,9 +8,9 @@ Worst name ever for a library that encapsulates chroot.
 - [ ] URL Linux
 - [ ] Dir Linux
 - [ ] File Linux
-- [ ] URL Darwin
+- [x] URL Darwin
 - [x] Dir Darwin
-- [ ] File Darwin
+- [x] File Darwin
 - [ ] Non existing URL
 - [ ] Non tar resource URL
 - [ ] File tar zipped (not supported)
@@ -24,3 +24,4 @@ Worst name ever for a library that encapsulates chroot.
 - [ ] Show download progress
 - [ ] Support download redirections
 - [ ] Version management
+- [ ] Development setup instructions and dependency management
