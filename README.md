@@ -25,3 +25,7 @@ Worst name ever for a library that encapsulates chroot.
 - [ ] Support download redirections
 - [ ] Version management
 - [ ] Development setup instructions and dependency management
+
+# Design
+
+<img src="./chrootisolate.png">
