@@ -17,6 +17,9 @@ const (
 	NotStarted ProcessState = "not started"
 	Running    ProcessState = "running"
 	Finished   ProcessState = "finished"
+	Signaled   ProcessState = "signaled"
+	Hangup     ProcessState = "hangup"
+	Killed     ProcessState = "killed"
 )
 
 // ChrootedProcess represents a process to be executed into a chroot sandbox
@@ -28,6 +31,7 @@ type ChrootedProcess struct {
 	outStream *os.File
 	root      string
 	cmd       *exec.Cmd
+	waited    bool
 }
 
 // NewChrootProcess returns a chroot process structure
@@ -35,6 +39,8 @@ func NewChrootProcess(root string) *ChrootedProcess {
 	return &ChrootedProcess{
 		outStream: os.Stdout,
 		root:      root,
+		// hack: indicates if we can cast ProcessState.Sys() as syscall.WaitStatus
+		waited: false,
 	}
 }
 
@@ -47,6 +53,7 @@ func (p *ChrootedProcess) SetOutput(out *os.File) {
 func (p *ChrootedProcess) Exec(command string, args ...string) error {
 	p.Lock()
 	defer p.Unlock()
+	p.waited = false
 
 	if p.getState() == Running {
 		return fmt.Errorf("Error starting process: there is another process executing in this chroot")
@@ -86,11 +93,13 @@ func (p *ChrootedProcess) Exec(command string, args ...string) error {
 
 // Wait waits for the execution to end
 func (p *ChrootedProcess) Wait() error {
+
 	if p.getState() != Running {
 		return fmt.Errorf("Error waiting process: process has not started")
 	}
 
 	err := p.cmd.Wait()
+	p.waited = true
 	if err != nil {
 		return fmt.Errorf("Error waiting process: %s", err.Error())
 	}
@@ -146,6 +155,21 @@ func (p *ChrootedProcess) getState() ProcessState {
 	}
 	// process running
 	if p.cmd.ProcessState == nil || p.cmd.ProcessState.Exited() == false {
+
+		// if process has finished waiting, but is not exited, it must be signaled.
+		if p.waited {
+			ws := p.cmd.ProcessState.Sys().(syscall.WaitStatus)
+			if ws.Signaled() {
+				switch ws.Signal().String() {
+				case "hangup":
+					return Hangup
+				case "killed":
+					return Killed
+				default:
+					return Signaled
+				}
+			}
+		}
 		return Running
 	}
 	// process finished
