@@ -11,10 +11,10 @@ Worst name ever for a library that encapsulates chroot.
 - [x] URL Darwin
 - [x] Dir Darwin
 - [x] File Darwin
-- [ ] Non existing URL
-- [ ] Non tar resource URL
+- [x] Non existing URL
+- [x] Non tar resource URL
 - [ ] File tar zipped (not supported)
-- [ ] Non existing Dir
+- [x] Non existing Dir
 
 # Improvements
 
