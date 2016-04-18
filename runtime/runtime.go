@@ -93,6 +93,8 @@ func (p *ChrootedProcess) Exec(command string, args ...string) error {
 
 // Wait waits for the execution to end
 func (p *ChrootedProcess) Wait() error {
+	p.Lock()
+	defer p.Unlock()
 
 	if p.getState() != Running {
 		return fmt.Errorf("Error waiting process: process has not started")
