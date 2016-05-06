@@ -29,3 +29,28 @@ Worst name ever for a library that encapsulates chroot.
 # Design
 
 <img src="./chrootisolate.png">
+
+# Usage
+
+```
+
+// prepare image t
+isolation, err := fsioscli.PrepareIsolation(image, root)
+
+// execute process
+isolated.Exec(process, args)
+
+```
+
+```
+client := fsisocli.net.Client{osFS}
+imageFile := client.Download(file, target)
+
+
+fs := fsisocli.fs.DefaultFileSystem()
+fs.
+image := fsisocli.NewImage(imageFile)
+
+
+
+fsisocli.NewImage
