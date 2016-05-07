@@ -3,14 +3,12 @@ package fsisolate
 // Prepare prepares the filesystem structure to start a chrooted execution
 func Prepare(imagePath string, root string) (*ChrootedProcess, error) {
 
-	img := Image{
-		Path: imagePath,
-		Root: root,
-	}
+	// use default values
+	img := Image{}
 
 	// prepare, download if URL
 	// root returns the new root where the image is going to be executed
-	realRoot, err := img.Prepare()
+	realRoot, err := img.Prepare(imagePath, root)
 	if err != nil {
 		return nil, err
 	}
