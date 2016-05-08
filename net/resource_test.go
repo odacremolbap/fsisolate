@@ -61,7 +61,7 @@ func equalBytes(a, b []byte) bool {
 func TestDownload(t *testing.T) {
 
 	var testData = []struct {
-		url        string // resoruce URL
+		url        string // resource URL
 		status     int    // expected status from URL
 		body       []byte // body returned from URL
 		directory  string // directory to download to
