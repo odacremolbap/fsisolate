@@ -51,7 +51,9 @@ func (i *Image) Prepare(path, root string) (string, error) {
 		}
 
 		// download image to temp dir
-		r := net.Resource{}
+		r := net.Resource{
+			Client: i.Client,
+		}
 		localFilePath, err = r.Download(path, downloadDir)
 		if err != nil {
 			return "", err
