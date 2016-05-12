@@ -4,7 +4,7 @@ Worst name ever for a library that encapsulates chroot.
 
 
 # Tests
-- [ ] Write tests!
+- [x] Write tests!
 - [x] URL Linux
 - [x] Dir Linux
 - [x] File Linux
@@ -23,7 +23,6 @@ Worst name ever for a library that encapsulates chroot.
 - [ ] Check if directories exits (root and image) before creating and extracting tar
 - [ ] Show download progress
 - [ ] Support download redirections
-- [ ] Version management
 - [ ] Development setup instructions and dependency management
 
 # Design
@@ -36,21 +35,15 @@ Worst name ever for a library that encapsulates chroot.
 
 // prepare image t
 isolation, err := fsioscli.PrepareIsolation(image, root)
+...
 
 // execute process
-isolated.Exec(process, args)
+err = isolated.Exec(process, args)
+...
+
+err = chrootProc.Wait()
+...
 
 ```
 
-```
-client := fsisocli.net.Client{osFS}
-imageFile := client.Download(file, target)
-
-
-fs := fsisocli.fs.DefaultFileSystem()
-fs.
-image := fsisocli.NewImage(imageFile)
-
-
-
-fsisocli.NewImage
+# Tests
