@@ -1,6 +1,7 @@
 package net
 
 import (
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -56,6 +57,17 @@ func equalBytes(a, b []byte) bool {
 		}
 	}
 	return true
+}
+
+func TestMain(t *testing.M) {
+
+	// for now testdata is not uploaded to git because it's empty
+	if err := os.MkdirAll("testdata", 0777); err != nil {
+		fmt.Fprintf(os.Stderr, "Error creating 'testdata' directory for net package tests: %s\n", err)
+		os.Exit(1)
+	}
+
+	os.Exit(t.Run())
 }
 
 func TestDownload(t *testing.T) {
